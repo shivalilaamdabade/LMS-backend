@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const { testConnection, initializeDatabase } = require('./config/database-pg');
+const { testConnection, initializeDatabase } = require('./config/database');
 
 // Load environment variables
 dotenv.config();
@@ -15,12 +15,24 @@ const progressRoutes = require('./routes/progress');
 // Initialize Express app
 const app = express();
 
-// Middleware
-app.use(cors());
+// CORS Middleware - MUST BE FIRST before any other middleware
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  // Handle preflight OPTIONS requests
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  
+  next();
+});
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Request logging middleware - moved BEFORE routes
+// Request logging middleware
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
   next();
@@ -31,8 +43,44 @@ app.get('/', (req, res) => {
   res.json({
     success: true,
     message: 'LMS API is running',
-    version: '1.0.0'
+    version: '1.0.0',
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV || 'unknown'
   });
+});
+
+// API info route
+app.get('/api', (req, res) => {
+  res.json({
+    success: true,
+    message: 'LMS API v1',
+    endpoints: {
+      auth: '/api/auth',
+      login: 'POST /api/auth/login',
+      register: 'POST /api/auth/register',
+      courses: '/api/courses'
+    }
+  });
+});
+
+// Database health check route
+app.get('/api/health/db', async (req, res) => {
+  try {
+    const { testConnection } = require('./config/database');
+    const connected = await testConnection();
+    
+    res.json({
+      success: connected,
+      database: connected ? 'Connected' : 'Disconnected',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // API Routes
@@ -40,6 +88,57 @@ app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/enrollments', enrollmentRoutes);
 app.use('/api/progress', progressRoutes);
+
+// Hugging Face AI Proxy Route (to avoid CORS issues)
+app.post('/api/ai/chat', async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    console.log('🤖 Forwarding request to Hugging Face API...');
+    
+    const response = await fetch('https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.HUGGINGFACE_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        inputs: prompt,
+        parameters: {
+          max_new_tokens: 300,
+          temperature: 0.8,
+          top_p: 0.95,
+          return_full_text: false,
+          do_sample: true,
+          repetition_penalty: 1.2
+        }
+      })
+    });
+
+    console.log('Hugging Face API Response Status:', response.status);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Hugging Face API Error:', errorData);
+      return res.status(response.status).json(errorData);
+    }
+
+    const result = await response.json();
+    console.log('✅ AI Response received');
+    
+    res.json(result);
+  } catch (error) {
+    console.error('❌ Proxy Error:', error);
+    res.status(500).json({ 
+      error: 'Failed to get AI response',
+      details: error.message 
+    });
+  }
+});
 
 // 404 handler
 app.use((req, res) => {

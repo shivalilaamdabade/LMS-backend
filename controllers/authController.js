@@ -4,9 +4,16 @@ const User = require('../models/User');
 
 // Generate JWT Token
 const generateToken = (userId) => {
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE || '7d'
-  });
+  try {
+    const token = jwt.sign({ id: userId }, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRE || '7d'
+    });
+    console.log('Token generated successfully for user:', userId);
+    return token;
+  } catch (error) {
+    console.error('JWT sign error:', error);
+    throw error;
+  }
 };
 
 // Register new user
@@ -25,7 +32,14 @@ exports.register = async (req, res) => {
 
     // Check if user already exists
     console.log('Checking if user exists:', email);
-    const existingUser = await User.findByEmail(email);
+    let existingUser;
+    try {
+      existingUser = await User.findByEmail(email);
+    } catch (dbError) {
+      console.error('Database error during findByEmail:', dbError);
+      throw new Error('Database error: ' + dbError.message);
+    }
+    
     if (existingUser) {
       return res.status(400).json({ 
         success: false, 
@@ -35,23 +49,43 @@ exports.register = async (req, res) => {
 
     // Hash password
     console.log('Hashing password...');
-    const hashedPassword = await bcrypt.hash(password, 10);
+    let hashedPassword;
+    try {
+      hashedPassword = await bcrypt.hash(password, 10);
+    } catch (hashError) {
+      console.error('Bcrypt hash error:', hashError);
+      throw new Error('Password hashing failed: ' + hashError.message);
+    }
 
     // Create user
     console.log('Creating user in database...');
-    const userId = await User.create({
-      name,
-      email,
-      password: hashedPassword,
-      role: role || 'student'
-    });
+    let userId;
+    try {
+      userId = await User.create({
+        name,
+        email,
+        password: hashedPassword,
+        role: role || 'student'
+      });
+      console.log('User created with ID:', userId);
+    } catch (createError) {
+      console.error('Database error during user creation:', createError);
+      throw new Error('Failed to create user: ' + createError.message);
+    }
 
     // Generate token
-    const token = generateToken(userId);
+    let token;
+    try {
+      token = generateToken(userId);
+    } catch (tokenError) {
+      console.error('Token generation error:', tokenError);
+      throw new Error('Token generation failed: ' + tokenError.message);
+    }
 
     // Get created user
     const user = await User.findById(userId);
 
+    console.log('Registration successful for:', email);
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
@@ -61,15 +95,18 @@ exports.register = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Register error:', error);
-    console.error('Error stack:', error.stack);
+    console.error('\n=== REGISTER ERROR ===');
+    console.error('Error type:', error.constructor.name);
     console.error('Error message:', error.message);
-    console.error('Error code:', error.code);
-    console.error('Error errno:', error.errno);
+    console.error('Error stack:', error.stack);
+    console.error('Request body:', req.body);
+    console.error('=====================\n');
+    
     res.status(500).json({ 
       success: false, 
       message: 'Server error during registration',
-      debug: error.message
+      error: error.message,
+      debug: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };

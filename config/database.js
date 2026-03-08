@@ -1,39 +1,54 @@
-const { Pool } = require('pg');
+const mysql = require('mysql2/promise');
 require('dotenv').config();
 
-// Parse connection string or use individual env vars
+console.log('=== DATABASE CONFIG DEBUG ===');
+console.log('DB_HOST:', process.env.DB_HOST ? 'SET' : 'MISSING');
+console.log('DB_PORT:', process.env.DB_PORT ? 'SET' : 'MISSING');
+console.log('DB_USER:', process.env.DB_USER ? 'SET' : 'MISSING');
+console.log('DB_PASSWORD:', process.env.DB_PASSWORD ? 'SET' : 'MISSING');
+console.log('DB_NAME:', process.env.DB_NAME ? 'SET' : 'MISSING');
+console.log('SSL Config:', 'Aiven requires SSL - enabling with rejectUnauthorized');
+console.log('==============================');
+
+// Create MySQL connection pool
 let pool;
-if (process.env.DATABASE_URL) {
-  // Use connection string (Neon)
-  pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: {
-      rejectUnauthorized: false
-    }
-  });
-} else {
-  // Use individual env vars (backward compatibility)
-  pool = new Pool({
+
+try {
+  pool = mysql.createPool({
     host: process.env.DB_HOST,
     port: parseInt(process.env.DB_PORT),
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     ssl: {
-      rejectUnauthorized: false
-    }
+      rejectUnauthorized: false // Required for Aiven cloud MySQL
+    },
+    connectTimeout: 30000,  // 30 seconds - for slow free-tier connections
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
   });
+  console.log('✓ Database pool created successfully');
+} catch (error) {
+  console.error('✗ Failed to create database pool:', error.message);
+  throw error;
 }
 
 // Test connection
 async function testConnection() {
   try {
+    console.log('Attempting database connection...');
     const connection = await pool.getConnection();
     console.log('✓ Database connected successfully!');
+    console.log('Connection thread ID:', connection.threadId);
     connection.release();
     return true;
   } catch (error) {
     console.error('✗ Database connection failed:', error.message);
+    console.error('Error code:', error.code);
+    console.error('Error errno:', error.errno);
+    console.error('SQL State:', error.sqlState);
+    console.error('SSL error details:', error.message.includes('SSL') ? 'SSL-related error detected' : 'Non-SSL error');
     return false;
   }
 }
@@ -142,3 +157,4 @@ async function initializeDatabase() {
 }
 
 module.exports = { pool, testConnection, initializeDatabase };
+
