@@ -1,5 +1,6 @@
 # Force Render Redeploy
-# This file triggers a fresh build to deploy AI chat endpoint
-# Created: 2026-03-09
-BUILD_TRIGGER=ai_endpoint_deploy_v1
-TIMESTAMP=2026-03-09T00:00:00Z
+# Deploying AI chat endpoint with health check
+# Updated: 2026-03-09T06:57:00Z
+BUILD_TRIGGER=ai_endpoint_final_deploy_v2
+TIMESTAMP=2026-03-09T06:57:00Z
+FORCE_REDEPLOY=true
