@@ -38,6 +38,12 @@ app.use((req, res, next) => {
   next();
 });
 
+// Debug middleware for AI routes
+app.use('/api/ai', (req, res, next) => {
+  console.log('🔍 AI Route accessed:', req.method, req.path);
+  next();
+});
+
 // Health check route
 app.get('/', (req, res) => {
   res.json({
@@ -84,14 +90,15 @@ app.get('/api/health/db', async (req, res) => {
   }
 });
 
-// API Routes
+// API Routes - Place specific routes BEFORE generic ones
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/enrollments', enrollmentRoutes);
 app.use('/api/progress', progressRoutes);
 
-// AI Health Check Route
+// AI Health Check Route (must be before catch-all routes)
 app.get('/api/ai/health', (req, res) => {
+  console.log('✅ AI health check requested');
   res.json({
     success: true,
     message: 'AI endpoint is available',
@@ -102,6 +109,10 @@ app.get('/api/ai/health', (req, res) => {
 
 // Hugging Face AI Proxy Route (to avoid CORS issues)
 app.post('/api/ai/chat', async (req, res) => {
+  console.log('🤖 AI CHAT ROUTE HIT - Method:', req.method);
+  console.log('Request headers:', JSON.stringify(req.headers));
+  console.log('Request body:', JSON.stringify(req.body));
+  
   try {
     const { prompt } = req.body;
     
