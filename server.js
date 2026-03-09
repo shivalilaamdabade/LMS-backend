@@ -114,11 +114,7 @@ app.get('/api/ai/health', (req, res) => {
 });
 
 // Hugging Face AI Proxy Route (to avoid CORS issues)
-// Handle OPTIONS preflight request
-app.options('/api/ai/chat', (req, res) => {
- res.status(200).send();
-});
-
+// Note: OPTIONS is handled by CORS middleware above
 app.post('/api/ai/chat', async (req, res) => {
   console.log('🤖 AI CHAT ROUTE HIT - Method:', req.method);
   console.log('Request headers:', JSON.stringify(req.headers));
