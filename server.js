@@ -58,7 +58,8 @@ app.get('/api', (req, res) => {
       auth: '/api/auth',
       login: 'POST /api/auth/login',
       register: 'POST /api/auth/register',
-      courses: '/api/courses'
+      courses: '/api/courses',
+      ai: 'POST /api/ai/chat'
     }
   });
 });
@@ -88,6 +89,16 @@ app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/enrollments', enrollmentRoutes);
 app.use('/api/progress', progressRoutes);
+
+// AI Health Check Route
+app.get('/api/ai/health', (req, res) => {
+  res.json({
+    success: true,
+    message: 'AI endpoint is available',
+    chatEndpoint: 'POST /api/ai/chat',
+    timestamp: new Date().toISOString()
+  });
+});
 
 // Hugging Face AI Proxy Route (to avoid CORS issues)
 app.post('/api/ai/chat', async (req, res) => {
