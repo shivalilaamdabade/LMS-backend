@@ -94,11 +94,15 @@ app.post('/api/ai/chat', async (req, res) => {
   try {
     const { prompt } = req.body;
     
+    console.log('🤖 Received AI chat request');
+    console.log('Prompt:', prompt ? 'Present' : 'Missing');
+    
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
     }
 
     console.log('🤖 Forwarding request to Hugging Face API...');
+    console.log('Token exists:', process.env.HUGGINGFACE_TOKEN ? 'YES' : 'NO');
     
     const response = await fetch('https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2', {
       method: 'POST',
@@ -129,10 +133,12 @@ app.post('/api/ai/chat', async (req, res) => {
 
     const result = await response.json();
     console.log('✅ AI Response received');
+    console.log('Response:', JSON.stringify(result).substring(0, 100));
     
     res.json(result);
   } catch (error) {
     console.error('❌ Proxy Error:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ 
       error: 'Failed to get AI response',
       details: error.message 
