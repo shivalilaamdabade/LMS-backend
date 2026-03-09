@@ -63,16 +63,27 @@ app.get('/', (req, res) => {
 
 // API info route
 app.get('/api', (req, res) => {
-  res.json({
-    success: true,
-    message: 'LMS API v1',
+ res.json({
+   success: true,
+   message: 'LMS API v1',
     endpoints: {
       auth: '/api/auth',
       login: 'POST /api/auth/login',
-      register: 'POST /api/auth/register',
-      courses: '/api/courses',
-      ai: 'POST /api/ai/chat'
+     register: 'POST /api/auth/register',
+     courses: '/api/courses',
+     ai: 'POST /api/ai/chat'
     }
+  });
+});
+
+// TEST ROUTE - Verify POST routing works
+app.post('/api/test-post', (req, res) => {
+ console.log('✅ TEST POST ROUTE HIT!');
+ res.json({
+   success: true,
+   message: 'POST routing works!',
+    body: req.body,
+    timestamp: new Date().toISOString()
   });
 });
 
