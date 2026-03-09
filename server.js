@@ -16,15 +16,21 @@ const progressRoutes = require('./routes/progress');
 const app = express();
 
 // CORS Middleware - MUST BE FIRST before any other middleware
+// Modified: Skip OPTIONS for /api/ai/chat to use custom handler
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  res.header('Access-Control-Allow-Credentials', 'true');
+  // Let /api/ai/chat OPTIONS requests pass through to custom handler
+  if (req.method === 'OPTIONS' && req.path === '/api/ai/chat') {
+   return next();
+  }
+  
+ res.header('Access-Control-Allow-Origin', '*');
+ res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+ res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+ res.header('Access-Control-Allow-Credentials', 'true');
   
   // Handle preflight OPTIONS requests
   if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
+   return res.sendStatus(200);
   }
   
   next();
