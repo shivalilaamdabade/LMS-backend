@@ -1,6 +1,6 @@
 # Force Render Redeploy
-# Deploying AI chat endpoint with health check
-# Updated: 2026-03-09T06:57:00Z
-BUILD_TRIGGER=ai_endpoint_final_deploy_v2
-TIMESTAMP=2026-03-09T06:57:00Z
-FORCE_REDEPLOY=true
+# URGENT: Need latest commit with test route
+# Updated: 2026-03-09T17:40:00Z
+BUILD_TRIGGER=urgent_test_route_deploy_v4
+TIMESTAMP=2026-03-09T17:40:00Z
+PRIORITY=HIGH
