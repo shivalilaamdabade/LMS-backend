@@ -107,7 +107,69 @@ app.get('/api/health/db', async (req, res) => {
   }
 });
 
-// API Routes - Place specific routes BEFORE generic ones
+// API Routes - CRITICAL: AI routes MUST come before wildcard routes
+// AI routes must be registered BEFORE /:id wildcard routes in courses
+app.post('/api/ai/chat', async (req, res) => {
+  console.log('🤖 AI CHAT ROUTE HIT - Method:', req.method);
+  console.log('Request headers:', JSON.stringify(req.headers));
+  console.log('Request body:', JSON.stringify(req.body));
+  
+  try {
+  const { prompt } = req.body;
+   
+  console.log('🤖 Received AI chat request');
+  console.log('Prompt:', prompt ? 'Present' : 'Missing');
+   
+   if (!prompt) {
+    return res.status(400).json({ error: 'Prompt is required' });
+   }
+
+  console.log('🤖 Forwarding request to Hugging Face API...');
+  console.log('Token exists:', process.env.HUGGINGFACE_TOKEN ? 'YES' : 'NO');
+   
+  const response = await fetch('https://router.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2', {
+    method: 'POST',
+    headers: {
+       'Authorization': `Bearer ${process.env.HUGGINGFACE_TOKEN}`,
+       'Content-Type': 'application/json'
+     },
+     body: JSON.stringify({
+       inputs: prompt,
+       parameters: {
+         max_new_tokens: 300,
+         temperature: 0.8,
+         top_p: 0.95,
+        return_full_text: false,
+         do_sample: true,
+        repetition_penalty: 1.2
+       }
+     })
+   });
+
+  console.log('Hugging Face API Response Status:', response.status);
+
+   if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    console.error('Hugging Face API Error:', errorData);
+    return res.status(response.status).json(errorData);
+   }
+
+  const result = await response.json();
+  console.log('✅ AI Response received');
+  console.log('Response:', JSON.stringify(result).substring(0, 100));
+   
+  res.json(result);
+  } catch (error) {
+  console.error('❌ Proxy Error:', error);
+  console.error('Error stack:', error.stack);
+  res.status(500).json({ 
+    error: 'Failed to get AI response',
+     details: error.message 
+   });
+  }
+});
+
+// Other API Routes (these have wildcards like /:id that can interfere)
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/enrollments', enrollmentRoutes);
