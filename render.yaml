@@ -23,5 +23,7 @@ services:
         sync: false
       - key: JWT_EXPIRE
         value: 7d
+      - key: HUGGINGFACE_TOKEN
+        sync: false
       - key: CORS_ORIGIN
         value: "*"
