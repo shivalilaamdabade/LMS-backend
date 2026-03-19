@@ -43,8 +43,12 @@ app.use(express.urlencoded({ extended: true }));
 
 // Request logging middleware
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-  next();
+ console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+ // Log ALL requests to /api/ai/*
+ if (req.path.includes('/api/ai')) {
+  console.log('🔍 DEBUG: Request to AI path detected:', req.method, req.originalUrl);
+ }
+ next();
 });
 
 // Debug middleware for AI routes
