@@ -55,12 +55,13 @@ app.use('/api/ai', (req, res, next) => {
 
 // Health check route
 app.get('/', (req, res) => {
-  res.json({
-    success: true,
-    message: 'LMS API is running',
+ res.json({
+   success: true,
+   message: 'LMS API is running',
     version: '1.0.0',
-    timestamp: new Date().toISOString(),
-    env: process.env.NODE_ENV || 'unknown'
+   timestamp: new Date().toISOString(),
+   env: process.env.NODE_ENV || 'unknown',
+   fixDeployed: 'ROUTE_ORDER_FIX_v5' // Verify deployment
   });
 });
 
