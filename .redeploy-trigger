@@ -1,6 +1,7 @@
-# Force Render Redeploy
-# URGENT: Need latest commit with test route
-# Updated: 2026-03-09T17:40:00Z
-BUILD_TRIGGER=urgent_test_route_deploy_v4
-TIMESTAMP=2026-03-09T17:40:00Z
-PRIORITY=HIGH
+# URGENT REDEPLOY - Route Order Fix
+# This MUST deploy to fix the 404 issue
+# Updated: 2026-03-09T18:05:00Z
+BUILD_TRIGGER=ROUTE_ORDER_FIX_FINAL_v5
+TIMESTAMP=2026-03-09T18:05:00Z
+PRIORITY=CRITICAL
+FORCE_FULL_REBUILD=true
